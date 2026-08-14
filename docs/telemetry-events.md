@@ -258,6 +258,8 @@ void
   'changeType': 'wip' | 'stash' | 'commit' | 'branch' | 'compare' | 'draft-stash' | 'draft-patch' | 'draft-suggested_pr_change',
   'config.largePromptThreshold': number,
   'config.usedCustomInstructions': boolean,
+  // Groups every request of one AI session — the user's whole resolution task, and the unit the backend charges its flat per-feature fee on. Counting distinct IDs measures sessions; `conflictResolution/run` measures operations. Set only by conflict resolution.
+  'conversationId': string,
   'correlationId': string,
   'customInstructions.commitMessage.setting.length': number,
   'customInstructions.commitMessage.setting.used': boolean,
@@ -329,6 +331,8 @@ void
 {
   'config.largePromptThreshold': number,
   'config.usedCustomInstructions': boolean,
+  // Groups every request of one AI session — the user's whole resolution task, and the unit the backend charges its flat per-feature fee on. Counting distinct IDs measures sessions; `conflictResolution/run` measures operations. Set only by conflict resolution.
+  'conversationId': string,
   'correlationId': string,
   'customInstructions.commitMessage.setting.length': number,
   'customInstructions.commitMessage.setting.used': boolean,
@@ -371,6 +375,8 @@ or
 {
   'config.largePromptThreshold': number,
   'config.usedCustomInstructions': boolean,
+  // Groups every request of one AI session — the user's whole resolution task, and the unit the backend charges its flat per-feature fee on. Counting distinct IDs measures sessions; `conflictResolution/run` measures operations. Set only by conflict resolution.
+  'conversationId': string,
   'correlationId': string,
   'customInstructions.commitMessage.setting.length': number,
   'customInstructions.commitMessage.setting.used': boolean,
@@ -413,6 +419,8 @@ or
 {
   'config.largePromptThreshold': number,
   'config.usedCustomInstructions': boolean,
+  // Groups every request of one AI session — the user's whole resolution task, and the unit the backend charges its flat per-feature fee on. Counting distinct IDs measures sessions; `conflictResolution/run` measures operations. Set only by conflict resolution.
+  'conversationId': string,
   'correlationId': string,
   'customInstructions.commitMessage.setting.length': number,
   'customInstructions.commitMessage.setting.used': boolean,
@@ -456,6 +464,8 @@ or
 {
   'config.largePromptThreshold': number,
   'config.usedCustomInstructions': boolean,
+  // Groups every request of one AI session — the user's whole resolution task, and the unit the backend charges its flat per-feature fee on. Counting distinct IDs measures sessions; `conflictResolution/run` measures operations. Set only by conflict resolution.
+  'conversationId': string,
   'correlationId': string,
   'customInstructions.commitMessage.setting.length': number,
   'customInstructions.commitMessage.setting.used': boolean,
@@ -498,6 +508,8 @@ or
 {
   'config.largePromptThreshold': number,
   'config.usedCustomInstructions': boolean,
+  // Groups every request of one AI session — the user's whole resolution task, and the unit the backend charges its flat per-feature fee on. Counting distinct IDs measures sessions; `conflictResolution/run` measures operations. Set only by conflict resolution.
+  'conversationId': string,
   'correlationId': string,
   'customInstructions.commitMessage.setting.length': number,
   'customInstructions.commitMessage.setting.used': boolean,
@@ -540,6 +552,8 @@ or
 {
   'config.largePromptThreshold': number,
   'config.usedCustomInstructions': boolean,
+  // Groups every request of one AI session — the user's whole resolution task, and the unit the backend charges its flat per-feature fee on. Counting distinct IDs measures sessions; `conflictResolution/run` measures operations. Set only by conflict resolution.
+  'conversationId': string,
   'correlationId': string,
   'customInstructions.commitMessage.setting.length': number,
   'customInstructions.commitMessage.setting.used': boolean,
@@ -582,6 +596,8 @@ or
 {
   'config.largePromptThreshold': number,
   'config.usedCustomInstructions': boolean,
+  // Groups every request of one AI session — the user's whole resolution task, and the unit the backend charges its flat per-feature fee on. Counting distinct IDs measures sessions; `conflictResolution/run` measures operations. Set only by conflict resolution.
+  'conversationId': string,
   'correlationId': string,
   'customInstructions.commitMessage.setting.length': number,
   'customInstructions.commitMessage.setting.used': boolean,
@@ -624,6 +640,8 @@ or
 {
   'config.largePromptThreshold': number,
   'config.usedCustomInstructions': boolean,
+  // Groups every request of one AI session — the user's whole resolution task, and the unit the backend charges its flat per-feature fee on. Counting distinct IDs measures sessions; `conflictResolution/run` measures operations. Set only by conflict resolution.
+  'conversationId': string,
   'correlationId': string,
   'customInstructions.commitMessage.setting.length': number,
   'customInstructions.commitMessage.setting.used': boolean,
@@ -668,6 +686,8 @@ or
 {
   'config.largePromptThreshold': number,
   'config.usedCustomInstructions': boolean,
+  // Groups every request of one AI session — the user's whole resolution task, and the unit the backend charges its flat per-feature fee on. Counting distinct IDs measures sessions; `conflictResolution/run` measures operations. Set only by conflict resolution.
+  'conversationId': string,
   'correlationId': string,
   'customInstructions.commitMessage.setting.length': number,
   'customInstructions.commitMessage.setting.used': boolean,
@@ -4893,7 +4913,11 @@ reveal, …) settles without landing on its row and shows the jump-feedback toas
   // Resolutions resolved by taking the current/ours side
   'result.strategy.takeOurs.count': number,
   // Resolutions resolved by taking the incoming/theirs side
-  'result.strategy.takeTheirs.count': number
+  'result.strategy.takeTheirs.count': number,
+  // Repo-consultation tool calls summed over the run
+  'tools.calls.count': number,
+  // Resolver steps summed over the run — one model round-trip each, mirroring `autoRebase/step/resolved` so both paths are comparable
+  'tools.steps.count': number
 }
 ```
 

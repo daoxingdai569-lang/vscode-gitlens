@@ -2065,6 +2065,9 @@ export class DetailsWorkflowController implements ReactiveController {
 					'result.strategy.takeTheirs.count': takeTheirs,
 					'result.strategy.deleted.count': deleted,
 					'result.strategy.skipped.count': skipped,
+					// Absent when seeded from a run whose provider reported no metrics
+					'tools.steps.count': r.metrics?.steps,
+					'tools.calls.count': r.metrics?.toolCalls,
 				});
 			}
 			return;

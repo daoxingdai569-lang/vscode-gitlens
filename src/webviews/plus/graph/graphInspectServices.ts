@@ -1587,6 +1587,7 @@ export class GraphInspectServices {
 								resolutions: summaries,
 								errors: errors.length > 0 ? errors : undefined,
 								skipped: skipped.length > 0 ? skipped : undefined,
+								metrics: sumResolutionEffort(resolutions),
 							},
 						};
 					} catch (ex) {
@@ -3127,6 +3128,22 @@ function combineResolveGuidance(instructions: string | undefined): string | unde
 	if (!typed) return setting;
 
 	return `${setting}\n\nAnd here is additional guidance for this run (it takes highest priority): ${typed}`;
+}
+
+/** Sums the resolver's step and tool-call counts over a run for the panel's completion telemetry —
+ *  the same accounting `autoRebase/step/resolved` reports, so the two paths can be compared. A
+ *  resolution whose provider reported no metrics contributes 0. */
+function sumResolutionEffort(resolutions: readonly ConflictToolsResolution[]): {
+	steps: number;
+	toolCalls: number;
+} {
+	let steps = 0;
+	let toolCalls = 0;
+	for (const r of resolutions) {
+		steps += r.metrics?.stepCount ?? 0;
+		toolCalls += r.metrics?.toolCallCount ?? 0;
+	}
+	return { steps: steps, toolCalls: toolCalls };
 }
 
 /** Logs each resolution's AI token usage (when the provider reported it) plus a run total to the

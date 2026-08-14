@@ -912,6 +912,10 @@ interface AIEventDataBase {
 
 interface AIEventDataSendBase extends AIEventDataBase {
 	correlationId?: string;
+	/** Groups every request of one AI session — the user's whole resolution task, and the unit the
+	 *  backend charges its flat per-feature fee on. Counting distinct IDs measures sessions;
+	 *  `conflictResolution/run` measures operations. Set only by conflict resolution. */
+	conversationId?: string;
 
 	'retry.count': number;
 	duration?: number;
@@ -1519,6 +1523,11 @@ interface GraphDetailsResolveGenerateCompletedEvent extends GraphDetailsResolveG
 	'result.strategy.deleted.count': number;
 	/** Resolutions left as skipped */
 	'result.strategy.skipped.count': number;
+	/** Resolver steps summed over the run — one model round-trip each, mirroring
+	 *  `autoRebase/step/resolved` so both paths are comparable */
+	'tools.steps.count'?: number;
+	/** Repo-consultation tool calls summed over the run */
+	'tools.calls.count'?: number;
 }
 
 interface GraphDetailsResolveApplyEvent extends GraphContextEventData {
