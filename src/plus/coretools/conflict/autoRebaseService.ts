@@ -723,6 +723,7 @@ export class AutoRebaseService implements Disposable {
 						conversationId: active.session.id,
 						// Resolved pre-flight, so no request can stop to ask for one mid-run.
 						model: model,
+						stepContext: { step: args.step, totalSteps: args.totalSteps },
 					},
 					{ source: source.source, detail: 'autoRebase' },
 				),

@@ -58,6 +58,12 @@ export interface ResolveSingleArgs {
 	model?: AIModel;
 }
 
+/** Rebase-step context, carried for telemetry only. */
+export interface ResolveStepContext {
+	step: number;
+	totalSteps: number;
+}
+
 export interface ExtractArgs {
 	svc: GitRepositoryService;
 	filePath: string;
@@ -90,6 +96,9 @@ export interface ResolveAllParallelArgs {
 	 *  non-silent resolve can show the model picker — so files resolving in parallel would each race to
 	 *  open a picker VS Code can only show one of, cancelling the rest as "the AI couldn't resolve". */
 	model?: AIModel;
+	/** Set by the automatic rebase, which calls this once per paused step, so `conflictResolution/run`
+	 *  can be rolled up per run instead of per step. */
+	stepContext?: ResolveStepContext;
 }
 
 /** Default max in-flight AI resolutions for the parallel batch path — balances throughput against
@@ -127,6 +136,14 @@ export class ConflictToolsIntegration {
 	}
 
 	async resolveSingle(args: ResolveSingleArgs, telemetrySource: Source): Promise<Resolution> {
+		// Emitted here, not at each call site: this and `resolveAllParallel` are the only ways any
+		// surface resolves a conflict with AI, so one event covers every path.
+		this.container.telemetry.sendEvent(
+			'conflictResolution/run',
+			{ mode: 'single', 'files.count': 1 },
+			telemetrySource,
+		);
+
 		const git = createConflictGitPort(this.container, args.svc, {
 			inScopePaths: [args.conflict.filePath],
 		});
@@ -160,6 +177,18 @@ export class ConflictToolsIntegration {
 	 * errored, or skipped — so no conflicted file silently vanishes from the outcome.
 	 */
 	async resolveAllParallel(args: ResolveAllParallelArgs, telemetrySource: Source): Promise<StepResult> {
+		// See `resolveSingle` — the single chokepoint for measuring conflict-resolution usage.
+		this.container.telemetry.sendEvent(
+			'conflictResolution/run',
+			{
+				mode: 'batch',
+				'files.count': args.entries.length,
+				step: args.stepContext?.step,
+				'steps.total': args.stepContext?.totalSteps,
+			},
+			telemetrySource,
+		);
+
 		const git = createConflictGitPort(this.container, args.svc, {
 			inScopePaths: args.entries.map(e => e.path),
 		});

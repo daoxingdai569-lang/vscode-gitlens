@@ -43,6 +43,9 @@ export interface AutoRebaseLoopPorts {
 		entries: readonly UnmergedEntry[];
 		context: ResolutionContext;
 		onProgress: (event: ConflictProgressEvent) => void;
+		/** The step being resolved — carried for telemetry so a run's steps can be rolled up */
+		step: number;
+		totalSteps: number;
 	}): Promise<StepResult>;
 	applyResolutions(resolutions: readonly Resolution[]): Promise<void>;
 	stageFiles(paths: string[]): Promise<void>;
@@ -339,6 +342,8 @@ export async function runAutoRebaseLoop(
 		const customInstructions = ports.getCustomInstructions();
 		const result = await ports.resolveConflicts({
 			entries: entries,
+			step: stepNumber,
+			totalSteps: totalSteps,
 			context: {
 				...(refs != null ? { refs: refs } : {}),
 				// A standing preference ("prefer the incoming side for lockfiles") should govern every

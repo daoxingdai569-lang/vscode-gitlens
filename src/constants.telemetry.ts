@@ -230,6 +230,14 @@ export interface TelemetryEvents extends WebviewShowAbortedEvents, WebviewShownE
 	/** Sent when commit reachability fails to load */
 	'commitDetails/reachability/failed': DetailsReachabilityFailedEvent;
 
+	/**
+	 * Sent when an AI conflict resolution starts, from the chokepoint every path funnels through — use
+	 * this to measure usage, NOT `ai/generate` with `type: 'resolveConflicts'`, which fires once per
+	 * model round-trip inside the resolver's loop and so measures cost, not user actions.
+	 * `source.detail` splits automatic (`autoRebase`) from user-driven (`resolve*`).
+	 */
+	'conflictResolution/run': ConflictResolutionRunEvent;
+
 	/** Sent when a conflict-prone git command (merge, rebase, cherry-pick, revert, stash apply/pop) is run */
 	'gitCommand/run': GitCommandRunEvent;
 	/** Sent when a conflict occurs while running a conflict-prone git command */
@@ -1568,6 +1576,17 @@ export type FeaturePreviewEventData = {
 export type FeaturePreviewActionEventData = {
 	action: `start-preview-trial:${FeaturePreviews}`;
 } & FeaturePreviewEventData;
+
+interface ConflictResolutionRunEvent {
+	/** `batch` resolves a file set; `single` is the per-file retry from the resolve panel */
+	mode: 'batch' | 'single';
+	/** Conflicted files this resolution was asked to resolve */
+	'files.count': number;
+	/** The rebase step (msgnum) — set ONLY for an automatic rebase, which resolves once per paused
+	 *  step, so counting events alone counts steps rather than runs */
+	step?: number;
+	'steps.total'?: number;
+}
 
 type GitCommandType = 'merge' | 'rebase' | 'cherry-pick' | 'revert' | 'stash-apply' | 'stash-pop';
 

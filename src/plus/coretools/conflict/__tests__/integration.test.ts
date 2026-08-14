@@ -236,10 +236,18 @@ function makeAiFakes(responses: ScriptedResponse[], options?: { supportsTools?: 
 		},
 	};
 
+	// Records sent events so the usage-measurement contract can be asserted.
+	const sentEvents: { name: string; data: unknown; source: unknown }[] = [];
+	const telemetry = {
+		sendEvent: (name: string, data: unknown, source: unknown) =>
+			void sentEvents.push({ name: name, data: data, source: source }),
+	};
+
 	return {
-		container: { ai: ai } as unknown as Container,
+		container: { ai: ai, telemetry: telemetry } as unknown as Container,
 		seenMessages: seenMessages,
 		seenTools: seenTools,
+		sentEvents: sentEvents,
 		callCount: () => call,
 	};
 }
@@ -656,5 +664,92 @@ suite('coretools/conflict repo-consultation tool loop', () => {
 		// prompt's primary evidence.
 		const prompt = ai.seenMessages[0].map(m => m.content).join('\n');
 		assert.strictEqual(prompt.includes('+line 2500'), true, 'the conflicted file’s diff must not be capped');
+	});
+});
+
+suite('coretools/conflict usage telemetry', () => {
+	let dir: string;
+
+	setup(async () => {
+		dir = await mkdtemp(join(tmpdir(), 'gitlens-conflict-telemetry-'));
+	});
+
+	teardown(async () => {
+		await rm(dir, { recursive: true, force: true });
+	});
+
+	function runEvents(ai: ReturnType<typeof makeAiFakes>) {
+		return ai.sentEvents.filter(e => e.name === 'conflictResolution/run');
+	}
+
+	test('a batch resolution reports ONE run for the whole batch, not one per file', async () => {
+		// A per-file event would reintroduce exactly the `ai/generate` inflation this event exists to avoid.
+		const ai = makeAiFakes([{ text: takeTheirsResponse }, { text: takeTheirsResponse }]);
+		const { integration, svc } = makeToolGitFakes(dir, ai.container);
+		await writeFile(join(dir, 'a.conf'), conflicted);
+		await writeFile(join(dir, 'b.conf'), conflicted);
+
+		await integration.resolveAllParallel(
+			{
+				svc: svc,
+				entries: [
+					{ path: 'a.conf', reason: 'both-modified' },
+					{ path: 'b.conf', reason: 'both-modified' },
+				],
+				conversationId: 'conv-1',
+			},
+			{ source: 'graph', detail: 'resolveAll' },
+		);
+
+		const events = runEvents(ai);
+		assert.strictEqual(events.length, 1, 'exactly one run event per batch');
+		assert.deepStrictEqual(events[0].data, {
+			mode: 'batch',
+			'files.count': 2,
+			step: undefined,
+			'steps.total': undefined,
+		});
+		assert.deepStrictEqual(events[0].source, { source: 'graph', detail: 'resolveAll' });
+	});
+
+	test('an automatic rebase step carries its step context so runs can be rolled up', async () => {
+		// Called once per paused step, so without this a single rebase looks like several resolutions.
+		const ai = makeAiFakes([{ text: takeTheirsResponse }]);
+		const { integration, svc } = makeToolGitFakes(dir, ai.container);
+		await writeFile(join(dir, 'a.conf'), conflicted);
+
+		await integration.resolveAllParallel(
+			{
+				svc: svc,
+				entries: [{ path: 'a.conf', reason: 'both-modified' }],
+				conversationId: 'conv-1',
+				stepContext: { step: 3, totalSteps: 7 },
+			},
+			{ source: 'graph', detail: 'autoRebase' },
+		);
+
+		assert.deepStrictEqual(runEvents(ai)[0].data, {
+			mode: 'batch',
+			'files.count': 1,
+			step: 3,
+			'steps.total': 7,
+		});
+	});
+
+	test('a per-file retry reports a single-file run', async () => {
+		const ai = makeAiFakes([{ text: takeTheirsResponse }]);
+		const { integration, svc } = makeToolGitFakes(dir, ai.container);
+		await writeFile(join(dir, 'server.conf'), conflicted);
+		const conflict = await integration.extract({ svc: svc, filePath: 'server.conf' });
+
+		await integration.resolveSingle(
+			{ svc: svc, conflict: conflict!, conversationId: 'conv-1' },
+			{ source: 'graph', detail: 'resolveRetryFile' },
+		);
+
+		const events = runEvents(ai);
+		assert.strictEqual(events.length, 1);
+		assert.deepStrictEqual(events[0].data, { mode: 'single', 'files.count': 1 });
+		assert.deepStrictEqual(events[0].source, { source: 'graph', detail: 'resolveRetryFile' });
 	});
 });

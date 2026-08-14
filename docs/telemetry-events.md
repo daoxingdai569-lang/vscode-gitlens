@@ -1480,6 +1480,25 @@ or
 }
 ```
 
+### conflictResolution/run
+
+> Sent when an AI conflict resolution starts, from the chokepoint every path funnels through — use
+this to measure usage, NOT `ai/generate` with `type: 'resolveConflicts'`, which fires once per
+model round-trip inside the resolver's loop and so measures cost, not user actions.
+`source.detail` splits automatic (`autoRebase`) from user-driven (`resolve*`).
+
+```typescript
+{
+  // Conflicted files this resolution was asked to resolve
+  'files.count': number,
+  // `batch` resolves a file set; `single` is the per-file retry from the resolve panel
+  'mode': 'batch' | 'single',
+  // The rebase step (msgnum) — set ONLY for an automatic rebase, which resolves once per paused step, so counting events alone counts steps rather than runs
+  'step': number,
+  'steps.total': number
+}
+```
+
 ### extension/chunkLoad/failed
 
 > Sent when a lazily-loaded webpack chunk fails to load — typically because VS Code
